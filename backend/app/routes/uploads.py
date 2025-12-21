@@ -1,5 +1,7 @@
 """
 Routes pour l'upload et la gestion des images
+Supporte le stockage local (dev) et Supabase Storage (prod)
+
 POST /trades/{id}/images - Upload d'images pour un trade
 GET /trades/{id}/images - Liste des images d'un trade
 DELETE /images/{id} - Suppression d'une image
@@ -15,47 +17,90 @@ from app.database import get_db
 from app import crud
 from app.schemas import TradeImageResponse, ImageType
 from app.models import ImageType as ImageTypeEnum
+from app.services.storage import (
+    is_supabase_configured,
+    upload_to_supabase,
+    delete_from_supabase
+)
 
 router = APIRouter()
 
-# Configuration du dossier d'upload
+# Configuration du dossier d'upload local (fallback)
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 
+# Types MIME
+CONTENT_TYPES = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".gif": "image/gif",
+    ".webp": "image/webp"
+}
+
 
 def validate_file(file: UploadFile) -> None:
     """Valide le fichier uploadé"""
-    # Vérification de l'extension
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail=f"Extension non autorisée. Utilisez: {', '.join(ALLOWED_EXTENSIONS)}"
         )
 
 
-def save_upload_file(file: UploadFile, trade_id: int) -> str:
+def save_upload_file_local(file_content: bytes, filename: str, trade_id: int) -> str:
     """
-    Sauvegarde le fichier uploadé et retourne l'URL.
-    Organise les fichiers par trade_id.
+    Sauvegarde le fichier en local (mode dev).
+    Retourne l'URL relative.
     """
-    # Créer le dossier pour ce trade
     trade_dir = os.path.join(UPLOAD_DIR, str(trade_id))
     os.makedirs(trade_dir, exist_ok=True)
-    
-    # Générer un nom unique
-    ext = os.path.splitext(file.filename)[1].lower()
+
+    ext = os.path.splitext(filename)[1].lower()
     unique_filename = f"{uuid.uuid4()}{ext}"
     file_path = os.path.join(trade_dir, unique_filename)
-    
-    # Sauvegarder le fichier
+
     with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    # Retourner l'URL relative
+        buffer.write(file_content)
+
     return f"/uploads/{trade_id}/{unique_filename}"
+
+
+async def save_upload_file(file: UploadFile, trade_id: int) -> str:
+    """
+    Sauvegarde le fichier uploadé.
+    Utilise Supabase si configuré, sinon stockage local.
+    """
+    # Lire le contenu du fichier
+    content = await file.read()
+    ext = os.path.splitext(file.filename)[1].lower()
+    content_type = CONTENT_TYPES.get(ext, "application/octet-stream")
+
+    # Essayer Supabase d'abord
+    if is_supabase_configured():
+        url = upload_to_supabase(content, file.filename, trade_id, content_type)
+        if url:
+            return url
+
+    # Fallback: stockage local
+    return save_upload_file_local(content, file.filename, trade_id)
+
+
+def delete_file(image_url: str) -> None:
+    """
+    Supprime un fichier (Supabase ou local).
+    """
+    # Si c'est une URL Supabase
+    if "supabase" in image_url:
+        delete_from_supabase(image_url)
+    else:
+        # Stockage local
+        file_path = image_url.lstrip("/")
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
 
 @router.post("/{trade_id}/images", response_model=List[TradeImageResponse], status_code=201)
@@ -68,11 +113,12 @@ async def upload_images(
 ):
     """
     Upload une ou plusieurs images pour un trade.
-    
+
     - Formats acceptés: JPG, PNG, GIF, WebP
     - Taille max: 10 MB par fichier
     - Max 10 fichiers par requête
-    
+    - Stockage: Supabase Storage (prod) ou local (dev)
+
     Types d'images:
     - before: Capture avant l'entrée
     - during: Pendant le trade
@@ -83,19 +129,19 @@ async def upload_images(
     trade = crud.get_trade(db, trade_id)
     if not trade:
         raise HTTPException(status_code=404, detail="Trade non trouvé")
-    
+
     if len(files) > 10:
         raise HTTPException(status_code=400, detail="Maximum 10 fichiers par upload")
-    
+
     uploaded_images = []
-    
+
     for file in files:
         # Valider le fichier
         validate_file(file)
-        
-        # Sauvegarder le fichier
-        image_url = save_upload_file(file, trade_id)
-        
+
+        # Sauvegarder le fichier (Supabase ou local)
+        image_url = await save_upload_file(file, trade_id)
+
         # Créer l'entrée en base
         db_image = crud.create_trade_image(
             db=db,
@@ -104,10 +150,10 @@ async def upload_images(
             image_type=ImageTypeEnum(image_type.value),
             caption=caption
         )
-        
+
         if db_image:
             uploaded_images.append(db_image)
-    
+
     return uploaded_images
 
 
@@ -116,11 +162,10 @@ def get_trade_images(trade_id: int, db: Session = Depends(get_db)):
     """
     Récupère toutes les images d'un trade.
     """
-    # Vérifier que le trade existe
     trade = crud.get_trade(db, trade_id)
     if not trade:
         raise HTTPException(status_code=404, detail="Trade non trouvé")
-    
+
     return crud.get_trade_images(db, trade_id)
 
 
@@ -128,19 +173,27 @@ def get_trade_images(trade_id: int, db: Session = Depends(get_db)):
 def delete_image(image_id: int, db: Session = Depends(get_db)):
     """
     Supprime une image spécifique.
-    Supprime aussi le fichier physique.
+    Supprime aussi le fichier (Supabase ou local).
     """
-    # Récupérer l'image pour avoir le chemin
     image = crud.get_image(db, image_id)
     if not image:
         raise HTTPException(status_code=404, detail="Image non trouvée")
-    
-    # Supprimer le fichier physique
-    file_path = image.image_url.lstrip("/")
-    if os.path.exists(file_path):
-        os.remove(file_path)
-    
+
+    # Supprimer le fichier
+    delete_file(image.image_url)
+
     # Supprimer l'entrée en base
     crud.delete_trade_image(db, image_id)
-    
+
     return None
+
+
+@router.get("/storage/status")
+def get_storage_status():
+    """
+    Retourne le statut du stockage (Supabase ou local).
+    """
+    return {
+        "storage_type": "supabase" if is_supabase_configured() else "local",
+        "supabase_configured": is_supabase_configured()
+    }

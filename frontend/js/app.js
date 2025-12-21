@@ -605,15 +605,18 @@ async function loadTradeImages(tradeId) {
             return;
         }
 
-        gallery.innerHTML = images.map(img => `
+        gallery.innerHTML = images.map(img => {
+            const imgUrl = getImageUrl(img.image_url);
+            return `
             <div class="image-card">
-                <img src="${CONFIG.API_BASE_URL}${img.image_url}" alt="${img.image_type}" onclick="openFullImage('${CONFIG.API_BASE_URL}${img.image_url}')">
+                <img src="${imgUrl}" alt="${img.image_type}" onclick="openFullImage('${imgUrl}')">
                 <div class="image-card-overlay">
                     <span class="image-type-badge">${img.image_type}</span>
                     <button class="image-delete-btn" onclick="deleteImage(${img.id})">🗑</button>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     } catch (error) {
         gallery.innerHTML = '<div class="empty-state"><p>Erreur de chargement</p></div>';
     }
@@ -854,14 +857,17 @@ function renderTradeDetail(trade) {
                 <div class="trade-detail-images">
                     <h3>Images (${trade.images.length})</h3>
                     <div class="images-gallery">
-                        ${trade.images.map(img => `
+                        ${trade.images.map(img => {
+                            const imgUrl = getImageUrl(img.image_url);
+                            return `
                             <div class="image-card">
-                                <img src="${CONFIG.API_BASE_URL}${img.image_url}" alt="${img.image_type}" onclick="openFullImage('${CONFIG.API_BASE_URL}${img.image_url}')">
+                                <img src="${imgUrl}" alt="${img.image_type}" onclick="openFullImage('${imgUrl}')">
                                 <div class="image-card-overlay">
                                     <span class="image-type-badge">${img.image_type}</span>
                                 </div>
                             </div>
-                        `).join('')}
+                        `;
+                        }).join('')}
                     </div>
                 </div>
             ` : ''}
@@ -870,6 +876,19 @@ function renderTradeDetail(trade) {
 }
 
 // ==================== UTILITIES ====================
+
+/**
+ * Obtenir l'URL complète d'une image
+ * Gère les URLs Supabase (complètes) et locales (relatives)
+ */
+function getImageUrl(imageUrl) {
+    // Si c'est déjà une URL complète (Supabase), la retourner telle quelle
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+        return imageUrl;
+    }
+    // Sinon, c'est une URL locale, ajouter le BASE_URL
+    return `${CONFIG.API_BASE_URL}${imageUrl}`;
+}
 
 /**
  * Formater une date
