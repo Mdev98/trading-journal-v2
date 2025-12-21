@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Journal | Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>📊 Trading Journal</h1>
+            <nav class="nav">
+                <a href="#" class="nav-link active" data-view="dashboard">Dashboard</a>
+                <a href="#" class="nav-link" data-view="trades">Trades</a>
+                <a href="#" class="nav-link" data-view="stats">Statistiques</a>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- Dashboard View -->
+            <section id="dashboard-view" class="view active">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-label">Total Trades</span>
+                        <span class="stat-value" id="stat-total-trades">-</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Winrate</span>
+                        <span class="stat-value" id="stat-winrate">-</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Expectancy</span>
+                        <span class="stat-value" id="stat-expectancy">-</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Total R</span>
+                        <span class="stat-value" id="stat-total-r">-</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">P&L USD</span>
+                        <span class="stat-value" id="stat-pnl">-</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Max Drawdown</span>
+                        <span class="stat-value" id="stat-drawdown">-</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Discipline</span>
+                        <span class="stat-value" id="stat-discipline">-</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Profit Factor</span>
+                        <span class="stat-value" id="stat-pf">-</span>
+                    </div>
+                </div>
+
+                <!-- Quick Add Button -->
+                <button class="btn btn-primary btn-add" onclick="openTradeModal()">
+                    + Nouveau Trade
+                </button>
+
+                <!-- Recent Trades -->
+                <div class="section">
+                    <h2>Derniers Trades</h2>
+                    <div class="table-container">
+                        <table class="trades-table" id="recent-trades-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Instrument</th>
+                                    <th>Setup</th>
+                                    <th>Direction</th>
+                                    <th>Result (R)</th>
+                                    <th>P&L</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-trades-body">
+                                <!-- Rempli dynamiquement -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Trades View -->
+            <section id="trades-view" class="view">
+                <!-- Filtres -->
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <label>Date début</label>
+                        <input type="date" id="filter-date-from">
+                    </div>
+                    <div class="filter-group">
+                        <label>Date fin</label>
+                        <input type="date" id="filter-date-to">
+                    </div>
+                    <div class="filter-group">
+                        <label>Instrument</label>
+                        <select id="filter-instrument">
+                            <option value="">Tous</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Setup</label>
+                        <select id="filter-setup">
+                            <option value="">Tous</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Session</label>
+                        <select id="filter-session">
+                            <option value="">Toutes</option>
+                            <option value="Asia">Asia</option>
+                            <option value="London">London</option>
+                            <option value="NY">NY</option>
+                            <option value="Overlap">Overlap</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" onclick="applyFilters()">Filtrer</button>
+                    <button class="btn btn-outline" onclick="clearFilters()">Reset</button>
+                </div>
+
+                <!-- Actions -->
+                <div class="actions-bar">
+                    <button class="btn btn-primary" onclick="openTradeModal()">+ Nouveau Trade</button>
+                </div>
+
+                <!-- Table des trades -->
+                <div class="table-container">
+                    <table class="trades-table" id="all-trades-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Instrument</th>
+                                <th>Session</th>
+                                <th>Setup</th>
+                                <th>Direction</th>
+                                <th>Entry</th>
+                                <th>RR Exp.</th>
+                                <th>Result (R)</th>
+                                <th>P&L</th>
+                                <th>Plan</th>
+                                <th>Images</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-trades-body">
+                            <!-- Rempli dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination" id="pagination">
+                    <!-- Rempli dynamiquement -->
+                </div>
+            </section>
+
+            <!-- Stats View -->
+            <section id="stats-view" class="view">
+                <div class="stats-sections">
+                    <!-- Stats par Setup -->
+                    <div class="stats-section">
+                        <h2>Performance par Setup</h2>
+                        <div class="stats-table-wrapper">
+                            <table class="stats-table" id="setup-stats-table">
+                                <thead>
+                                    <tr>
+                                        <th>Setup</th>
+                                        <th>Trades</th>
+                                        <th>Winrate</th>
+                                        <th>Expectancy</th>
+                                        <th>Total R</th>
+                                        <th>PF</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="setup-stats-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Stats par Session -->
+                    <div class="stats-section">
+                        <h2>Performance par Session</h2>
+                        <div class="stats-table-wrapper">
+                            <table class="stats-table" id="session-stats-table">
+                                <thead>
+                                    <tr>
+                                        <th>Session</th>
+                                        <th>Trades</th>
+                                        <th>Winrate</th>
+                                        <th>Expectancy</th>
+                                        <th>Total R</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="session-stats-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Erreurs fréquentes -->
+                    <div class="stats-section">
+                        <h2>Erreurs Fréquentes</h2>
+                        <div class="stats-table-wrapper">
+                            <table class="stats-table" id="error-stats-table">
+                                <thead>
+                                    <tr>
+                                        <th>Type d'erreur</th>
+                                        <th>Occurrences</th>
+                                        <th>%</th>
+                                        <th>Perte Moy. (R)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="error-stats-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Corrélation état mental -->
+                    <div class="stats-section">
+                        <h2>État Mental vs Résultats</h2>
+                        <div class="stats-table-wrapper">
+                            <table class="stats-table" id="mental-stats-table">
+                                <thead>
+                                    <tr>
+                                        <th>État (1-5)</th>
+                                        <th>Trades</th>
+                                        <th>Winrate</th>
+                                        <th>Résultat Moy. (R)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mental-stats-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Ajout/Edit Trade -->
+    <div class="modal" id="trade-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Nouveau Trade</h2>
+                <button class="modal-close" onclick="closeTradeModal()">&times;</button>
+            </div>
+            <form id="trade-form" onsubmit="handleTradeSubmit(event)">
+                <input type="hidden" id="trade-id">
+                
+                <div class="form-grid">
+                    <!-- Infos de base -->
+                    <div class="form-group">
+                        <label for="trade-date">Date & Heure *</label>
+                        <input type="datetime-local" id="trade-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="trade-instrument">Instrument *</label>
+                        <input type="text" id="trade-instrument" placeholder="XAUUSD" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="trade-session">Session *</label>
+                        <select id="trade-session" required>
+                            <option value="Asia">Asia</option>
+                            <option value="London">London</option>
+                            <option value="NY">NY</option>
+                            <option value="Overlap">Overlap</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="trade-setup">Setup *</label>
+                        <input type="text" id="trade-setup" placeholder="CRT, BOS..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="trade-direction">Direction *</label>
+                        <select id="trade-direction" required>
+                            <option value="Buy">Buy</option>
+                            <option value="Sell">Sell</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="trade-timeframe">Timeframe *</label>
+                        <input type="text" id="trade-timeframe" placeholder="M15" required>
+                    </div>
+
+                    <!-- Prix -->
+                    <div class="form-group">
+                        <label for="trade-entry">Entry *</label>
+                        <input type="number" step="any" id="trade-entry" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="trade-sl">Stop Loss *</label>
+                        <input type="number" step="any" id="trade-sl" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="trade-tp">Take Profit</label>
+                        <input type="number" step="any" id="trade-tp">
+                    </div>
+
+                    <!-- Risque -->
+                    <div class="form-group">
+                        <label for="trade-risk-pct">Risk % *</label>
+                        <input type="number" step="0.1" id="trade-risk-pct" value="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="trade-risk-usd">Risk USD *</label>
+                        <input type="number" step="0.01" id="trade-risk-usd" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="trade-rr">RR Attendu *</label>
+                        <input type="number" step="0.1" id="trade-rr" required>
+                    </div>
+
+                    <!-- Résultats -->
+                    <div class="form-group">
+                        <label for="trade-result-r">Résultat (R)</label>
+                        <input type="number" step="0.01" id="trade-result-r">
+                    </div>
+                    <div class="form-group">
+                        <label for="trade-pnl">P&L USD</label>
+                        <input type="number" step="0.01" id="trade-pnl">
+                    </div>
+                    <div class="form-group">
+                        <label for="trade-duration">Durée (min)</label>
+                        <input type="number" id="trade-duration">
+                    </div>
+
+                    <!-- Discipline -->
+                    <div class="form-group">
+                        <label for="trade-plan">Plan respecté</label>
+                        <select id="trade-plan">
+                            <option value="true">Oui</option>
+                            <option value="false">Non</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="trade-error">Erreur</label>
+                        <select id="trade-error" onchange="toggleErrorType()">
+                            <option value="false">Non</option>
+                            <option value="true">Oui</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="error-type-group" style="display: none;">
+                        <label for="trade-error-type">Type d'erreur</label>
+                        <select id="trade-error-type">
+                            <option value="None">Aucune</option>
+                            <option value="FOMO">FOMO</option>
+                            <option value="Revenge">Revenge</option>
+                            <option value="Oversize">Oversize</option>
+                            <option value="No SL">No SL</option>
+                            <option value="Early Exit">Early Exit</option>
+                            <option value="Late Entry">Late Entry</option>
+                            <option value="Wrong Setup">Wrong Setup</option>
+                            <option value="News Ignored">News Ignored</option>
+                            <option value="Overtrading">Overtrading</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="trade-mental">État Mental (1-5)</label>
+                        <select id="trade-mental">
+                            <option value="">-</option>
+                            <option value="1">1 - Très mauvais</option>
+                            <option value="2">2 - Mauvais</option>
+                            <option value="3">3 - Neutre</option>
+                            <option value="4">4 - Bon</option>
+                            <option value="5">5 - Excellent</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="form-group full-width">
+                    <label for="trade-notes">Notes</label>
+                    <textarea id="trade-notes" rows="3" placeholder="Observations, analyse..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeTradeModal()">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Images -->
+    <div class="modal" id="images-modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Images du Trade</h2>
+                <button class="modal-close" onclick="closeImagesModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Zone d'upload -->
+                <div class="upload-zone" id="upload-zone">
+                    <input type="file" id="image-input" multiple accept="image/*" style="display: none;">
+                    <div class="upload-placeholder" onclick="document.getElementById('image-input').click()">
+                        <span class="upload-icon">📷</span>
+                        <p>Cliquez ou glissez des images ici</p>
+                        <p class="upload-hint">JPG, PNG, GIF, WebP - Max 10MB</p>
+                    </div>
+                </div>
+
+                <!-- Type d'image pour upload -->
+                <div class="upload-options">
+                    <label>Type d'image:</label>
+                    <select id="upload-image-type">
+                        <option value="before">Before</option>
+                        <option value="during">During</option>
+                        <option value="after">After</option>
+                        <option value="analysis" selected>Analysis</option>
+                    </select>
+                    <button class="btn btn-primary" id="upload-btn" onclick="uploadImages()" disabled>
+                        Uploader
+                    </button>
+                </div>
+
+                <!-- Galerie d'images existantes -->
+                <div class="images-gallery" id="images-gallery">
+                    <!-- Rempli dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Détail Trade -->
+    <div class="modal" id="detail-modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Détail du Trade</h2>
+                <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="detail-content">
+                <!-- Rempli dynamiquement -->
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

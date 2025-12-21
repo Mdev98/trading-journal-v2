@@ -1,0 +1,16 @@
+# Configuration Render Blueprint
+services:
+  - type: web
+    name: trading-journal-api
+    env: python
+    region: frankfurt
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: UPLOAD_DIR
+        value: /opt/render/project/src/uploads
