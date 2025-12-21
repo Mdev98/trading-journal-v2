@@ -6,7 +6,7 @@ const CONFIG = {
     // URL de l'API backend
     // Dev: http://localhost:8000
     // Prod: https://votre-app.onrender.com
-    API_BASE_URL: 'http://localhost:8000',
+    API_BASE_URL: 'https://trading-journal-v2.onrender.com',
     
     // Nombre de trades par page
     PAGE_SIZE: 20,
