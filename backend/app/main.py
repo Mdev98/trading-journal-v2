@@ -28,14 +28,10 @@ app = FastAPI(
 )
 
 # Configuration CORS pour le frontend
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5500")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5500",
-        "http://127.0.0.1:5500",
-        "https://*.netlify.app",
-        os.getenv("FRONTEND_URL", "*")
-    ],
+    allow_origins=[frontend_url],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -24,12 +24,14 @@ def owner_login(password: str, response: Response):
     # Déterminer si secure doit être True (prod) ou False (dev)
     base_url = os.getenv("BASE_URL", "http://localhost:8000")
     is_secure = base_url.startswith("https://")
+    # Samesite None si cross-site (Netlify → Render)
+    samesite = "none" if is_secure else "strict"
     response.set_cookie(
         key="owner_session",
         value=session_id,
         httponly=True,
         max_age=SESSION_DURATION,
-        samesite="strict",
+        samesite=samesite,
         secure=is_secure
     )
     return {"message": "Authentifié comme owner", "expires_in": SESSION_DURATION}
