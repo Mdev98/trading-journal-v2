@@ -15,7 +15,8 @@ def hash_password(password: str) -> str:
 def owner_login(password: str, response: Response):
     if not OWNER_PASSWORD_HASH:
         raise HTTPException(status_code=500, detail="Mot de passe owner non configuré.")
-    if hash_password(password) != OWNER_PASSWORD_HASH:
+    hash_input = hash_password(password)
+    if hash_input != OWNER_PASSWORD_HASH:
         raise HTTPException(status_code=401, detail="Mot de passe incorrect.")
     session_id = secrets.token_urlsafe(32)
     expires_at = int(time.time()) + SESSION_DURATION

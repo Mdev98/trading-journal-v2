@@ -6,9 +6,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 # Lecture de la clé API depuis les variables d'environnement
-API_KEY_HASH = os.getenv("API_KEY_HASH")
+API_KEY_HASH = os.getenv("OWNER_PASSWORD_HASH")
 
 
 from app.database import engine, Base
