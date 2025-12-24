@@ -9,6 +9,8 @@ DELETE /trades/{id} - Supprimer un trade
 from datetime import datetime
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query
+
+from app.dependencies import verify_api_key
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -21,7 +23,7 @@ from app.schemas import (
 router = APIRouter()
 
 
-@router.post("", response_model=TradeResponse, status_code=201)
+@router.post("", response_model=TradeResponse, status_code=201, dependencies=[Depends(verify_api_key)])
 def create_trade(trade: TradeCreate, db: Session = Depends(get_db)):
     """
     Crée un nouveau trade.
@@ -138,7 +140,7 @@ def get_trade(trade_id: int, db: Session = Depends(get_db)):
     return trade
 
 
-@router.put("/{trade_id}", response_model=TradeResponse)
+@router.put("/{trade_id}", response_model=TradeResponse, dependencies=[Depends(verify_api_key)])
 def update_trade(trade_id: int, trade: TradeUpdate, db: Session = Depends(get_db)):
     """
     Met à jour un trade existant.
@@ -150,7 +152,7 @@ def update_trade(trade_id: int, trade: TradeUpdate, db: Session = Depends(get_db
     return updated_trade
 
 
-@router.delete("/{trade_id}", status_code=204)
+@router.delete("/{trade_id}", status_code=204, dependencies=[Depends(verify_api_key)])
 def delete_trade(trade_id: int, db: Session = Depends(get_db)):
     """
     Supprime un trade et toutes ses images associées.

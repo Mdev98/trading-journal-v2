@@ -7,6 +7,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
+# Lecture de la clé API depuis les variables d'environnement
+API_KEY_HASH = os.getenv("API_KEY_HASH")
+
 from app.database import engine, Base
 from app.routes import trades, stats, uploads
 
@@ -39,6 +42,8 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Servir les fichiers statiques (images uploadées)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
+# La variable API_KEY_HASH est maintenant disponible pour l'authentification
 
 # Inclusion des routes
 app.include_router(trades.router, prefix="/trades", tags=["Trades"])

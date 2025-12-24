@@ -11,6 +11,8 @@ import uuid
 import shutil
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+
+from app.dependencies import verify_api_key
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -103,7 +105,7 @@ def delete_file(image_url: str) -> None:
             os.remove(file_path)
 
 
-@router.post("/{trade_id}/images", response_model=List[TradeImageResponse], status_code=201)
+@router.post("/{trade_id}/images", response_model=List[TradeImageResponse], status_code=201, dependencies=[Depends(verify_api_key)])
 async def upload_images(
     trade_id: int,
     files: List[UploadFile] = File(..., description="Images à uploader (max 10)"),
@@ -169,7 +171,7 @@ def get_trade_images(trade_id: int, db: Session = Depends(get_db)):
     return crud.get_trade_images(db, trade_id)
 
 
-@router.delete("/images/{image_id}", status_code=204)
+@router.delete("/images/{image_id}", status_code=204, dependencies=[Depends(verify_api_key)])
 def delete_image(image_id: int, db: Session = Depends(get_db)):
     """
     Supprime une image spécifique.
