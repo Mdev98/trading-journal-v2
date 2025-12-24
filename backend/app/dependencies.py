@@ -26,8 +26,8 @@ def owner_login(password: str, response: Response):
     is_secure = base_url.startswith("https://")
     # En production (https), secure=True et samesite='none' (cross-site)
     # En local, secure=False et samesite='lax'
-    samesite = "none" if is_secure else "lax"
-    secure = True if is_secure else False
+    samesite = "none" 
+    secure = True 
     response.set_cookie(
         key="owner_session",
         value=session_id,
