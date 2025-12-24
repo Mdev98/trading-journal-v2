@@ -24,8 +24,8 @@ def owner_login(password: str, response: Response):
     # Déterminer si secure doit être True (prod) ou False (dev)
     base_url = os.getenv("BASE_URL", "http://localhost:8000")
     is_secure = base_url.startswith("https://")
-    # Samesite None si cross-site (Netlify → Render)
-    samesite = "none" if is_secure else "strict"
+    # Samesite None si cross-site (Netlify → Render), lax en local
+    samesite = "none" if is_secure else "lax"
     response.set_cookie(
         key="owner_session",
         value=session_id,
