@@ -7,6 +7,8 @@ const CONFIG = {
     // Dev: http://localhost:8000
     // Prod: https://votre-app.onrender.com
     API_BASE_URL: 'https://trading-journal-v2.onrender.com',
+    // Clé API secrète pour les requêtes sensibles (injectée par Netlify)
+    API_KEY: typeof process !== 'undefined' && process.env && process.env.API_KEY ? process.env.API_KEY : undefined,
     
     // Nombre de trades par page
     PAGE_SIZE: 20,

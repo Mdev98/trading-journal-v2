@@ -9,26 +9,31 @@ const API = {
      */
     async request(endpoint, options = {}) {
         const url = `${CONFIG.API_BASE_URL}${endpoint}`;
+        const method = (options.method || 'GET').toUpperCase();
+        const isSensitive = ['POST', 'PUT', 'DELETE'].includes(method);
+        const defaultHeaders = {
+            'Content-Type': 'application/json',
+        };
+        if (isSensitive) {
+            defaultHeaders['X-API-Key'] = CONFIG.API_KEY;
+        }
         const defaultOptions = {
             headers: {
-                'Content-Type': 'application/json',
+                ...defaultHeaders,
+                ...(options.headers || {})
             },
         };
 
         try {
             const response = await fetch(url, { ...defaultOptions, ...options });
-            
             // Gérer les réponses sans contenu (204)
             if (response.status === 204) {
                 return null;
             }
-
             const data = await response.json();
-
             if (!response.ok) {
                 throw new Error(data.detail || `HTTP error ${response.status}`);
             }
-
             return data;
         } catch (error) {
             console.error(`API Error [${endpoint}]:`, error);
@@ -114,11 +119,14 @@ const API = {
         }
         formData.append('image_type', imageType);
 
+
         const url = `${CONFIG.API_BASE_URL}/trades/${tradeId}/images`;
-        
         const response = await fetch(url, {
             method: 'POST',
             body: formData,
+            headers: {
+                'X-API-Key': CONFIG.API_KEY,
+            },
         });
 
         if (!response.ok) {
