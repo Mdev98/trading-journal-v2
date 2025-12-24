@@ -1,18 +1,40 @@
+import secrets
+import time
 import os
-from fastapi import Header, HTTPException, status, Depends
-from fastapi.security.utils import get_authorization_scheme_param
+from fastapi import Request, HTTPException, status, Response, Depends
 from hashlib import sha256
 
-from app.main import API_KEY_HASH
+# Mot de passe owner (hashé, stocké en variable d’environnement)
+OWNER_PASSWORD_HASH = os.getenv("OWNER_PASSWORD_HASH")
+SESSIONS = {}
+SESSION_DURATION = 30 * 60  # 30 minutes
 
-def verify_api_key(x_api_key: str = Header(...)):
-    if not API_KEY_HASH:
-        raise HTTPException(status_code=500, detail="API key non configurée.")
-    # On hash la clé reçue pour comparer
-    hashed = sha256(x_api_key.encode()).hexdigest()
-    if hashed != API_KEY_HASH:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Clé API invalide.",
-        )
+def hash_password(password: str) -> str:
+    return sha256(password.encode()).hexdigest()
+
+def owner_login(password: str, response: Response):
+    if not OWNER_PASSWORD_HASH:
+        raise HTTPException(status_code=500, detail="Mot de passe owner non configuré.")
+    if hash_password(password) != OWNER_PASSWORD_HASH:
+        raise HTTPException(status_code=401, detail="Mot de passe incorrect.")
+    session_id = secrets.token_urlsafe(32)
+    expires_at = int(time.time()) + SESSION_DURATION
+    SESSIONS[session_id] = expires_at
+    response.set_cookie(
+        key="owner_session",
+        value=session_id,
+        httponly=True,
+        max_age=SESSION_DURATION,
+        samesite="strict",
+        secure=True
+    )
+    return {"message": "Authentifié comme owner", "expires_in": SESSION_DURATION}
+
+def verify_owner(request: Request):
+    session_id = request.cookies.get("owner_session")
+    if not session_id or session_id not in SESSIONS:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Accès owner requis.")
+    if SESSIONS[session_id] < int(time.time()):
+        del SESSIONS[session_id]
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session owner expirée.")
     return True

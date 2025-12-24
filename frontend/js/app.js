@@ -11,6 +11,7 @@ const state = {
     selectedTradeId: null,
     filesToUpload: [],
     filters: {},
+    isOwner: false,
 };
 
 // ==================== INITIALIZATION ====================
@@ -19,8 +20,64 @@ document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
     initDragDrop();
     initFileInput();
+    initLogin();
     loadDashboard();
 });
+
+function initLogin() {
+    // Afficher le bouton login si non owner
+    if (!state.isOwner) {
+        addLoginButton();
+    }
+    // Formulaire login
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('owner-password').value;
+            try {
+                await API.loginOwner(password);
+                state.isOwner = true;
+                closeLoginModal();
+                showNotification('Connecté comme owner', 'success');
+                updateOwnerUI();
+            } catch (err) {
+                document.getElementById('login-error').textContent = err.message;
+                document.getElementById('login-error').style.display = 'block';
+            }
+        });
+    }
+}
+
+function addLoginButton() {
+    const header = document.querySelector('.header');
+    if (header && !document.getElementById('owner-login-btn')) {
+        const btn = document.createElement('button');
+        btn.id = 'owner-login-btn';
+        btn.className = 'btn btn-secondary';
+        btn.textContent = 'Connexion Owner';
+        btn.onclick = openLoginModal;
+        header.appendChild(btn);
+    }
+}
+
+function openLoginModal() {
+    document.getElementById('login-modal').style.display = 'block';
+}
+function closeLoginModal() {
+    document.getElementById('login-modal').style.display = 'none';
+    document.getElementById('login-error').style.display = 'none';
+}
+
+function updateOwnerUI() {
+    // Afficher les boutons CRUD si owner
+    document.querySelectorAll('.btn-add, .btn-edit, .btn-delete, #upload-btn').forEach(btn => {
+        btn.style.display = state.isOwner ? '' : 'none';
+    });
+    // Cacher le bouton login
+    const loginBtn = document.getElementById('owner-login-btn');
+    if (loginBtn) loginBtn.style.display = 'none';
+}
 
 /**
  * Initialiser la navigation

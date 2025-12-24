@@ -1,3 +1,20 @@
+    /**
+     * Login owner
+     */
+    async loginOwner(password) {
+        const formData = new FormData();
+        formData.append('password', password);
+        const response = await fetch(`${CONFIG.API_BASE_URL}/login`, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.detail || 'Login owner échoué');
+        }
+        return data;
+    },
 /**
  * API Client - Communication avec le backend FastAPI
  * Toutes les fonctions retournent des Promises
@@ -10,13 +27,9 @@ const API = {
     async request(endpoint, options = {}) {
         const url = `${CONFIG.API_BASE_URL}${endpoint}`;
         const method = (options.method || 'GET').toUpperCase();
-        const isSensitive = ['POST', 'PUT', 'DELETE'].includes(method);
         const defaultHeaders = {
             'Content-Type': 'application/json',
         };
-        if (isSensitive) {
-            defaultHeaders['X-API-Key'] = CONFIG.API_KEY;
-        }
         const defaultOptions = {
             headers: {
                 ...defaultHeaders,
@@ -124,9 +137,6 @@ const API = {
         const response = await fetch(url, {
             method: 'POST',
             body: formData,
-            headers: {
-                'X-API-Key': CONFIG.API_KEY,
-            },
         });
 
         if (!response.ok) {

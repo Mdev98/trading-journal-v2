@@ -33,7 +33,11 @@ def get_supabase_client() -> Optional[Client]:
 
 
 def is_supabase_configured() -> bool:
-    """Vérifie si Supabase Storage est configuré"""
+    """Vérifie si Supabase Storage est configuré. Retourne False en local (dev)."""
+    # Si on est en dev/local, on force le stockage local
+    env = os.getenv("ENV", "dev").lower()
+    if env in ["dev", "local", "development"]:
+        return False
     return bool(SUPABASE_URL and SUPABASE_KEY)
 
 
