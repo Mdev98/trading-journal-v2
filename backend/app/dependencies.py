@@ -21,13 +21,16 @@ def owner_login(password: str, response: Response):
     session_id = secrets.token_urlsafe(32)
     expires_at = int(time.time()) + SESSION_DURATION
     SESSIONS[session_id] = expires_at
+    # Déterminer si secure doit être True (prod) ou False (dev)
+    base_url = os.getenv("BASE_URL", "http://localhost:8000")
+    is_secure = base_url.startswith("https://")
     response.set_cookie(
         key="owner_session",
         value=session_id,
         httponly=True,
         max_age=SESSION_DURATION,
         samesite="strict",
-        secure=True
+        secure=is_secure
     )
     return {"message": "Authentifié comme owner", "expires_in": SESSION_DURATION}
 

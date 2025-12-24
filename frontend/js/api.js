@@ -38,7 +38,7 @@ const API = {
         };
 
         try {
-            const response = await fetch(url, { ...defaultOptions, ...options });
+            const response = await fetch(url, { ...defaultOptions, ...options, credentials: 'include' });
             // Gérer les réponses sans contenu (204)
             if (response.status === 204) {
                 return null;
