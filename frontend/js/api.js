@@ -134,17 +134,18 @@ const API = {
      */
     async uploadImages(tradeId, files, imageType = 'analysis') {
         const formData = new FormData();
-        
         for (const file of files) {
             formData.append('files', file);
         }
         formData.append('image_type', imageType);
 
-
         const url = `${CONFIG.API_BASE_URL}/trades/${tradeId}/images`;
+        const token = localStorage.getItem('owner_jwt');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
         const response = await fetch(url, {
             method: 'POST',
             body: formData,
+            headers
         });
 
         if (!response.ok) {
