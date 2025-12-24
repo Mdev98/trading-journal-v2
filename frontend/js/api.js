@@ -1,3 +1,9 @@
+/**
+ * API Client - Communication avec le backend FastAPI
+ * Toutes les fonctions retournent des Promises
+ */
+
+const API = {
     /**
      * Login owner
      */
@@ -15,12 +21,6 @@
         }
         return data;
     },
-/**
- * API Client - Communication avec le backend FastAPI
- * Toutes les fonctions retournent des Promises
- */
-
-const API = {
     /**
      * Requête HTTP générique
      */
