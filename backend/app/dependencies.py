@@ -1,48 +1,41 @@
-import secrets
 import time
 import os
-from fastapi import Request, HTTPException, status, Response, Depends
+from fastapi import Request, HTTPException, status
 from hashlib import sha256
+import jwt
 
-# Mot de passe owner (hashé, stocké en variable d’environnement)
 OWNER_PASSWORD_HASH = os.getenv("OWNER_PASSWORD_HASH")
-SESSIONS = {}
+JWT_SECRET = os.getenv("JWT_SECRET", "supersecretjwtkey")
+JWT_ALGO = "HS256"
 SESSION_DURATION = 30 * 60  # 30 minutes
 
 def hash_password(password: str) -> str:
     return sha256(password.encode()).hexdigest()
 
-def owner_login(password: str, response: Response):
+def owner_login(password: str):
     if not OWNER_PASSWORD_HASH:
         raise HTTPException(status_code=500, detail="Mot de passe owner non configuré.")
     hash_input = hash_password(password)
     if hash_input != OWNER_PASSWORD_HASH:
         raise HTTPException(status_code=401, detail="Mot de passe incorrect.")
-    session_id = secrets.token_urlsafe(32)
-    expires_at = int(time.time()) + SESSION_DURATION
-    SESSIONS[session_id] = expires_at
-    # Déterminer si secure doit être True (prod) ou False (dev)
-    base_url = os.getenv("BASE_URL", "http://localhost:8000")
-    is_secure = base_url.startswith("https://")
-    # En production (https), secure=True et samesite='none' (cross-site)
-    # En local, secure=False et samesite='lax'
-    samesite = "none" 
-    secure = True 
-    response.set_cookie(
-        key="owner_session",
-        value=session_id,
-        httponly=True,
-        max_age=SESSION_DURATION,
-        samesite=samesite,
-        secure=secure
-    )
-    return {"message": "Authentifié comme owner", "expires_in": SESSION_DURATION}
+    payload = {
+        "sub": "owner",
+        "exp": int(time.time()) + SESSION_DURATION
+    }
+    token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGO)
+    return {"access_token": token, "token_type": "bearer", "expires_in": SESSION_DURATION}
 
 def verify_owner(request: Request):
-    session_id = request.cookies.get("owner_session")
-    if not session_id or session_id not in SESSIONS:
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Accès owner requis.")
-    if SESSIONS[session_id] < int(time.time()):
-        del SESSIONS[session_id]
+    token = auth_header.split(" ", 1)[1]
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
+        if payload.get("sub") != "owner":
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token invalide.")
+    except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session owner expirée.")
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token owner invalide.")
     return True

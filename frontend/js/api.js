@@ -12,12 +12,15 @@ const API = {
         formData.append('password', password);
         const response = await fetch(`${CONFIG.API_BASE_URL}/login`, {
             method: 'POST',
-            body: formData,
-            credentials: 'include'
+            body: formData
         });
         const data = await response.json();
         if (!response.ok) {
             throw new Error(data.detail || 'Login owner échoué');
+        }
+        // Stocker le token JWT dans localStorage
+        if (data.access_token) {
+            localStorage.setItem('owner_jwt', data.access_token);
         }
         return data;
     },
@@ -30,6 +33,11 @@ const API = {
         const defaultHeaders = {
             'Content-Type': 'application/json',
         };
+        // Ajouter le JWT pour les requêtes d'écriture
+        const token = localStorage.getItem('owner_jwt');
+        if (token && ['POST', 'PUT', 'DELETE'].includes(method)) {
+            defaultHeaders['Authorization'] = `Bearer ${token}`;
+        }
         const defaultOptions = {
             headers: {
                 ...defaultHeaders,
@@ -38,7 +46,7 @@ const API = {
         };
 
         try {
-            const response = await fetch(url, { ...defaultOptions, ...options, credentials: 'include' });
+            const response = await fetch(url, { ...defaultOptions, ...options });
             // Gérer les réponses sans contenu (204)
             if (response.status === 204) {
                 return null;

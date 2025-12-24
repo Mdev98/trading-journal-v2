@@ -45,6 +45,11 @@ function initLogin() {
                 document.getElementById('login-error').textContent = err.message;
                 document.getElementById('login-error').style.display = 'block';
             }
+        // Vérifier la présence du JWT au chargement
+        if (localStorage.getItem('owner_jwt')) {
+            state.isOwner = true;
+            updateOwnerUI && updateOwnerUI();
+        }
         });
     }
 }

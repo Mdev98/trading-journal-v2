@@ -47,8 +47,8 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # Endpoint de login owner (mot de passe)
 @app.post("/login")
-def login_owner(response: Response, password: str = Form(...)):
-    return owner_login(password, response)
+def login_owner(password: str = Form(...)):
+    return owner_login(password)
 
 # Inclusion des routes
 app.include_router(trades.router, prefix="/trades", tags=["Trades"])
