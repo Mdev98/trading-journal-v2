@@ -263,3 +263,27 @@ class EquityPoint(BaseModel):
     cumulative_r: float
     cumulative_pnl: float
     trade_count: int
+
+
+# ==================== API KEY SCHEMAS ====================
+
+class APIKeyCreate(BaseModel):
+    """Schéma pour créer une clé API"""
+    name: str = Field(..., min_length=1, max_length=100, example="Mon script Python")
+
+
+class APIKeyResponse(BaseModel):
+    """Schéma de réponse pour une clé API"""
+    id: int
+    name: str
+    is_active: bool
+    created_at: datetime
+    last_used_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class APIKeyWithSecret(APIKeyResponse):
+    """Schéma de réponse avec la clé secrète (une seule fois à la création)"""
+    key: str

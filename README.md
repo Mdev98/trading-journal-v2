@@ -58,9 +58,43 @@ python -m http.server 5500
 # ou avec Live Server dans VS Code
 ```
 
+## 🔐 Authentification
+
+L'API supporte deux méthodes d'authentification:
+
+### 1. JWT Token (Frontend)
+```bash
+# Login avec mot de passe
+TOKEN=$(curl -X POST http://localhost:8000/login \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "password=YOUR_PASSWORD" | jq -r '.access_token')
+
+# Utiliser le token
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/trades
+```
+
+### 2. API Key (Scripts/Automations)
+```bash
+# Générer une clé API (depuis le frontend ou avec JWT token)
+curl -X POST http://localhost:8000/api-keys \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Mon script Python"}'
+
+# Utiliser la clé API
+curl -H "X-API-Key: your_api_key_here" http://localhost:8000/trades
+```
+
+**Endpoints API Key Management:**
+- `POST /api-keys` 🔒 — Créer une clé API
+- `GET /api-keys` 🔒 — Lister les clés API
+- `DELETE /api-keys/{id}` 🔒 — Révoquer une clé API
+
+---
+
 ## 📊 Endpoints API
 
-> Les endpoints marqués 🔒 nécessitent le header `Authorization: Bearer <token>`.
+> Les endpoints marqués 🔒 nécessitent l'authentification via `Authorization: Bearer <token>` OU `X-API-Key: <key>`.
 
 ---
 
@@ -469,3 +503,63 @@ Supprime l'entrée en base **et le fichier** (Supabase ou local).
 - **Max Drawdown**: Perte maximale depuis un pic
 - **Discipline Rate**: % de trades respectant le plan
 - **Corrélation mentale**: Impact de l'état mental sur les résultats
+
+## 🛠️ Exemples d'utilisation
+
+### Python avec clé API
+```python
+import requests
+from datetime import datetime
+
+API_KEY = "your_api_key_here"
+BASE_URL = "http://localhost:8000"
+
+headers = {"X-API-Key": API_KEY, "Content-Type": "application/json"}
+
+# Créer un trade
+trade = requests.post(f"{BASE_URL}/trades", headers=headers, json={
+    "date": datetime.now().isoformat(),
+    "instrument": "XAUUSD",
+    "session": "London",
+    "setup": "CRT",
+    "direction": "Buy",
+    "timeframe": "M15",
+    "entry": 2650.50,
+    "stop_loss": 2645.00,
+    "risk_pct": 1.0,
+    "risk_usd": 100,
+    "rr_expected": 2.5
+}).json()
+
+print(f"Trade créé: ID={trade['id']}")
+
+# Récupérer les stats
+stats = requests.get(f"{BASE_URL}/stats/global", headers=headers).json()
+print(f"Winrate: {stats['winrate']:.1f}%")
+```
+
+### cURL avec clé API
+```bash
+API_KEY="your_api_key_here"
+
+# Créer un trade
+curl -X POST http://localhost:8000/trades \
+  -H "X-API-Key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2024-12-20T10:30:00",
+    "instrument": "XAUUSD",
+    "session": "London",
+    "setup": "CRT",
+    "direction": "Buy",
+    "timeframe": "M15",
+    "entry": 2650.50,
+    "stop_loss": 2645.00,
+    "risk_pct": 1.0,
+    "risk_usd": 100,
+    "rr_expected": 2.5
+  }'
+```
+
+## 📚 Client Python réutilisable
+Un client Python prêt à l'emploi est disponible dans `backend/trade_client.py` pour faciliter l'intégration.

@@ -2,11 +2,12 @@
 Modèles SQLAlchemy pour le journal de trading
 Trade: Enregistrement d'un trade
 TradeImage: Images associées à un trade
+APIKey: Clés API pour authentification par script
 """
 import enum
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, Float, Boolean, 
+    Column, Integer, String, Float, Boolean,
     DateTime, ForeignKey, Enum, Text
 )
 from sqlalchemy.orm import relationship
@@ -122,6 +123,21 @@ class TradeImage(Base):
     image_type = Column(Enum(ImageType), default=ImageType.ANALYSIS)
     caption = Column(String(200), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
-    
+
     # Relations
     trade = relationship("Trade", back_populates="images")
+
+
+class APIKey(Base):
+    """
+    Clés API pour authentification par script.
+    Permet d'accéder à l'API sans passer par le login web.
+    """
+    __tablename__ = "api_keys"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String(64), nullable=False, unique=True, index=True)  # Clé API hachée
+    name = Column(String(100), nullable=False)  # Nom descriptif
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_used_at = Column(DateTime, nullable=True)
