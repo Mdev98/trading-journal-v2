@@ -6,7 +6,7 @@ const CONFIG = {
     // URL de l'API backend
     // Dev: http://localhost:8000
     // Prod: https://votre-app.onrender.com
-    API_BASE_URL: window.location.hostname !== 'localhost' ? '49.13.165.152:8000' : 'http://localhost:8000',
+    API_BASE_URL: window.location.hostname !== 'localhost' ? '49.13.165.152' : 'http://localhost:8000',
     // Plus de clé API côté frontend
     
     // Nombre de trades par page
